@@ -1,48 +1,74 @@
 {
-  description = "plutarch-template";
+  description = "proposal-loan";
 
-  # nixConfig = {
-  #   extra-experimental-features = [ "nix-command" "flakes" "ca-derivations" ];
-  #   extra-substituters = [ "https://cache.iog.io" ];
-  #   extra-trusted-public-keys = [ "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=" ];
-  #   allow-import-from-derivation = "true";
-  #   bash-prompt = "\\[\\e[0;92m\\][\\[\\e[0;92m\\]nix develop:\\[\\e[0;92m\\]\\w\\[\\e[0;92m\\]]\\[\\e[0;92m\\]$ \\[\\e[0m\\]";
-  #   max-jobs = "auto";
-  #   auto-optimise-store = "true";
-  # };
-
-  inputs = {
-    tooling.url = "github:mlabs-haskell/mlabs-tooling.nix";
-    plutarch.url = "github:Plutonomicon/plutarch/e50661e24670974b398be19426617bc6389fdac6";
-    ply.url = "github:mlabs-haskell/ply?ref=master";
-    plutus-simple-model.url = "github:mlabs-haskell/plutus-simple-model";
-    liqwid-libs.url = "github:Liqwid-Labs/liqwid-libs";
+  nixConfig = {
+    extra-substituters = [ "https://cache.iog.io" ];
+    extra-trusted-public-keys = [ "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=" ];
+    allow-import-from-derivation = "true";
+    bash-prompt = "\\[\\e[0m\\][\\[\\e[0;2m\\]nix \\[\\e[0;1m\\]proposal-loan \\[\\e[0;93m\\]\\w\\[\\e[0m\\]]\\[\\e[0m\\]$ \\[\\e[0m\\]";
+    cores = "1";
+    max-jobs = "auto";
+    auto-optimise-store = "true";
   };
 
-  outputs = inputs@{ self, tooling, plutus-simple-model, plutarch, ply, liqwid-libs }: tooling.lib.mkFlake { inherit self; }
-    {
-      imports = [
-        (tooling.lib.mkHaskellFlakeModule1 {
-          project.src = ./.;
-          project.shell.withHoogle = true;
-          project.modules = [
-            ({ config, ... }: {
-              packages.plutus-simple-model.doHaddock = false;
-            })
-          ];
-          project.extraHackage = [
-            "${plutus-simple-model}"
-            "${plutarch}"
-            "${plutarch}/plutarch-extra"
-            "${ply}/ply-core"
-            "${ply}/ply-plutarch"
-            "${liqwid-libs}/liqwid-plutarch-extra"
-            "${liqwid-libs}/plutarch-quickcheck"
-            "${liqwid-libs}/plutarch-unit"
-            "${liqwid-libs}/liqwid-script-export"
-            "${liqwid-libs}/plutarch-context-builder"
-          ];
-        })
-      ];
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs";
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    haskell-nix.url = "github:input-output-hk/haskell.nix";
+    iohk-nix.url = "github:input-output-hk/iohk-nix";
+    iohk-nix.inputs.nixpkgs.follows = "haskell-nix/nixpkgs";
+    CHaP = {
+      url = "github:input-output-hk/cardano-haskell-packages?ref=repo";
+      flake = false;
+    };
+    pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
+    hercules-ci-effects.url = "github:hercules-ci/hercules-ci-effects";
+    plutarch = {
+      url = "github:Plutonomicon/plutarch-plutus/e50661e24670974b398be19426617bc6389fdac6";
+    };
+  };
+
+  outputs = inputs@{ flake-parts, nixpkgs, haskell-nix, iohk-nix, CHaP, plutarch, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = [ "x86_64-linux" "aarch64-darwin" "x86_64-darwin" "aarch64-linux" ];
+      perSystem = { config, system, lib, self', ... }:
+        let
+          pkgs = import haskell-nix.inputs.nixpkgs {
+            inherit system;
+            overlays = [
+              haskell-nix.overlay
+              iohk-nix.overlays.crypto
+              iohk-nix.overlays.haskell-nix-crypto
+            ];
+            inherit (haskell-nix) config;
+          };
+          project = pkgs.haskell-nix.cabalProject' {
+            src = ./.;
+            compiler-nix-name = "ghc964";
+            index-state = "2024-06-17T12:18:52Z";
+            inputMap = {
+              "https://input-output-hk.github.io/cardano-haskell-packages" = CHaP;
+            };
+            shell = {
+              withHoogle = true;
+              withHaddock = true;
+              exactDeps = false;
+              tools = {
+                cabal = { };
+                haskell-language-server = { };
+                hlint = { };
+                cabal-fmt = { };
+                fourmolu = { };
+              };
+            };
+
+          };
+          flake = project.flake { };
+        in
+        {
+          devShells = flake.devShells;
+          packages = flake.packages;
+          checks = flake.checks;
+        };
     };
 }
