@@ -37,15 +37,7 @@ import PlutusLedgerApi.V2 (
 import Ply.Plutarch (
   writeTypedScript,
  )
-import PriceDiscoveryEvent.Mint.Standard (mkDiscoveryNodeMPW)
-import PriceDiscoveryEvent.MultiFold (pfoldValidatorW, pmintFoldPolicyW, pmintRewardFoldPolicyW, prewardFoldValidatorW)
-import PriceDiscoveryEvent.Validator (pDiscoverySetValidator, pDiscoverGlobalLogicW)
-import PriceDiscoveryEvent.ProjectTokenHolder (pprojectTokenHolder, pmintProjectTokenHolder)
-import PriceDiscoveryEvent.MultiFoldLiquidity qualified as LiquidityFold 
-import LiquidityEvent.Mint.Standard (mkLiquidityNodeMPW)
-import LiquidityEvent.Validator (pLiquiditySetValidator, pLiquidityGlobalLogicW)
-import LiquidityEvent.ProxyTokenHolderV1 qualified as ProxyTokenHolderV1
-import AlwaysFails (pAlwaysFails, pAuthMint)
+import ProposalLend (pAlwaysFails, pProposalLoanSpending)
 import System.IO
 import LiquidityEvent.LiquidityTokenHolder (pmintLiquidityTokenHolder, pliquidityTokenHolder)
 

@@ -30,8 +30,6 @@ common lang
     -fprint-explicit-foralls -fprint-explicit-kinds -Wunused-do-bind
 
   default-extensions:
-    NoFieldSelectors
-    NoStarIsType
     BangPatterns
     BinaryLiterals
     ConstrainedClassMethods
@@ -68,6 +66,8 @@ common lang
     MultiParamTypeClasses
     NamedFieldPuns
     NamedWildCards
+    NoFieldSelectors
+    NoStarIsType
     NumericUnderscores
     OverloadedLabels
     OverloadedRecordDot
@@ -103,8 +103,6 @@ library
     -fprint-explicit-kinds -fwarn-missing-import-lists
 
   default-extensions:
-    NoFieldSelectors
-    NoStarIsType
     BangPatterns
     BinaryLiterals
     ConstrainedClassMethods
@@ -141,6 +139,8 @@ library
     MultiParamTypeClasses
     NamedFieldPuns
     NamedWildCards
+    NoFieldSelectors
+    NoStarIsType
     NumericUnderscores
     OverloadedLabels
     OverloadedRecordDot
@@ -164,10 +164,10 @@ library
     TypeSynonymInstances
     UndecidableInstances
     ViewPatterns
-    
-  import:          lang
-  exposed-modules:
-    AlwaysFails 
+
+  import:             lang
+  exposed-modules:    ProposalLend
+
   -- Compile
 
   build-depends:
@@ -184,7 +184,7 @@ library
     , serialise
     , text
 
-  hs-source-dirs:  src
+  hs-source-dirs:     src
 
 common dependencies
   build-depends:
@@ -213,7 +213,5 @@ executable proposal-loan
 
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:
-  build-depends: proposal-loan
-   
-
+  build-depends:  proposal-loan
   hs-source-dirs: app
