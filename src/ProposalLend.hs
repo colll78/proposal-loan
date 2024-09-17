@@ -1,10 +1,14 @@
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 {-# OPTIONS_GHC -Wno-missing-import-lists #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 
-module AlwaysFails (pProposalLoanSpending) where 
+module ProposalLend (pProposalLoanSpending) where 
 
+import CrowdProposal.Utils (pexactlyOneOwnInput, plovelaceValueOf, pmustFind, pmustExist)
 import Plutarch.Prelude
-import Plutarch.LedgerApi.V3.Contexts (PScriptContext, PAddress, PCredential, PProposalProcedure, PGovernanceAction)
+import Plutarch.LedgerApi.V3 
 import qualified Plutarch.Monadic as P
 
 newtype PProposalLoanDatum (s :: S)
@@ -49,10 +53,17 @@ instance DerivePlutusType PProposalLoanAction where
 pProposalLoanSpending ::
   Term s (PScriptContext :--> PUnit)
 pProposalLoanSpending  = plam $ \ctx -> P.do 
-  ctxF <- pletFields @["txInfo", "redeemer", "scriptInfo"] ctx
-  scriptInfoF <- pletFields @["_0", "_1"] ctxF.scriptInfo 
+  ctxF <- pletFields @["txtxInfoF", "redeemer", "scriptInfo"] ctx
+  txInfoF <- pletFields @["inputs", "outputs", "proposalProcedures"] ctxF.txInfo
+  txInputs <- plet $ txInfoF.inputs
+  scriptInfoF <- pletFields @["_1"] ctxF.scriptInfo 
   let rdmr = punsafeCoerce @PGovernanceAction (pto ctxF.redeemer)
-  let ownInputRef = scriptInfoF._0 
+  ownInputRef <- plet $ scriptInfoF._0
+  ownInputCred <- plet $ pfield @"credential" #$
+    pfield @"address" #$ 
+      pfield @"resolved" #$
+        pmustFind (\txIn -> pfield @"outRef" # txIn #== ownInputRef) txInputs
+
   PDJust ownInputDatum <- pmatch scriptInfoF._1
   ownInputDatumF <- pletFields @["lenderRewardAccount", "lenderAddress", "fee"] (pto ownInputDatum)
   let expectedProposal = 
@@ -61,25 +72,21 @@ pProposalLoanSpending  = plam $ \ctx -> P.do
           pdcons @"returnAddr" # ownInputDatumF.lenderRewardAccount #$
           pdcons @"governanceAction" # rdmr #$
           pdnil
-      actualProposal = phead # ctxF.proposalProcedures
+      actualProposal = phead # txInfoF.proposalProcedures
       hasFeeOutput = 
         pmustExist @PBuiltinList 
           # plam(\out -> 
               (pfield @"address" # out) #== ownInputDatumF.lenderAddress
                 #&& (plovelaceValueOf out #== ownInputDatumF.fee)
             )   
-          # info.outputs  
+          # txInfoF.outputs  
       mintChecks = 
         pand'List
           [ hasFeeOutput
+          , pexactlyOneOwnInput # ownInputCred # txInputs
           , actualProposal #== expectedProposal 
           ] 
-    pure $
-      pif ( mintChecks ) (pconstant ()) perror 
+  pure $
+    pif ( mintChecks ) (pconstant ()) perror 
 
-plovelaceValueOf ::
-  forall (anyKey :: AssocMap.KeyGuarantees) (anyAmount :: AmountGuarantees) (s :: S).
-  Term s (PValue anyKey anyAmount) -> PInteger
-plovelaceValueOf txoVal = 
-  let adaCSEntry = phead # (pto $ pto txoVal)
-  in (psndBuiltin #$ phead #$ pto $ pfromData $ psndBuiltin # adaCSEntry) 
+

@@ -13,6 +13,7 @@ let
     src = ../.;
     name = "proposal-loans";
     compiler-nix-name = "ghc966";
+    index-state = "2024-06-17T12:18:52Z";
     inputMap = {
       "https://chap.intersectmbo.org/" = inputs.CHaP;
     };

@@ -166,7 +166,9 @@ library
     ViewPatterns
 
   import:             lang
-  exposed-modules:    ProposalLend
+  exposed-modules:
+    CrowdProposal.Utils
+    ProposalLend
 
   -- Compile
 
@@ -178,7 +180,8 @@ library
     , cardano-binary
     , data-default
     , plutarch
-    , plutus-core        >=1.30.0.0
+    , plutarch-ledger-api
+    , plutus-core          >=1.30.0.0
     , plutus-ledger-api
     , plutus-tx
     , serialise
@@ -198,7 +201,8 @@ common dependencies
     , data-default
     , directory
     , plutarch
-    , plutus-core        >=1.30.0.0
+    , plutarch-ledger-api
+    , plutus-core          >=1.30.0.0
     , plutus-ledger-api
     , plutus-tx
     , serialise
