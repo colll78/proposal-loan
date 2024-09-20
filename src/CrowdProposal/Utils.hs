@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-missing-import-lists #-}
+
 module CrowdProposal.Utils (
   ptryLookupValue
   , pisScriptCredential
@@ -6,13 +8,15 @@ module CrowdProposal.Utils (
   , pmustFind
   , pmustExist
   , pheadSingleton
+  , pcond
+  , pand'List
 ) where
 
 import Plutarch.Prelude
 import Plutarch.LedgerApi.V3
-import Plutarch.LedgerApi.AssocMap 
 import Plutarch.Builtin
 import Plutarch.Unsafe (punsafeCoerce)
+import Plutarch.Bool (pand')
 
 ptryLookupValue ::
   forall
@@ -97,6 +101,16 @@ pheadSingleton :: (PListLike list, PElemConstraint list a) => Term s (list a :--
 pheadSingleton = phoistAcyclic $
   plam $ \xs ->
     pelimList
-      (pelimList (\_ _ -> ptraceError "List contains more than one element."))
-      (ptraceError "List is empty.")
+      (pelimList (\_ _ -> ptraceInfoError "List contains more than one element."))
+      (ptraceInfoError "List is empty.")
       xs
+
+pand'List :: [Term s PBool] -> Term s PBool
+pand'List ts' =
+  case ts' of
+    [] -> pconstant True
+    ts -> foldl1 (\res x -> pand' # res # x) ts
+
+pcond :: [(Term s PBool, Term s a)] -> Term s a -> Term s a
+pcond [] def = def
+pcond ((cond, x) : conds) def = pif cond x $ pcond conds def

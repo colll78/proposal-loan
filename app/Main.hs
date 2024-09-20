@@ -18,14 +18,13 @@ import Data.Text (
  )
 import Data.Text.Encoding qualified as Text
 import Plutarch (
-  Config (Config),
-  TracingMode (DoTracing, NoTracing, DoTracingAndBinds),
+  Config (..),
+  TracingMode (..),
+  LogLevel (..), 
   compile,
  )
 import Plutarch.Evaluate (
   evalScript,
- )
-import "liqwid-plutarch-extra" Plutarch.Extra.Script (
   applyArguments,
  )
 import Plutarch.Prelude
@@ -34,12 +33,9 @@ import PlutusLedgerApi.V2 (
   Data,
   ExBudget,
  )
-import Ply.Plutarch (
-  writeTypedScript,
- )
-import ProposalLend (pAlwaysFails, pProposalLoanSpending)
+
+import ProposalLend (pProposalLoanSpending)
 import System.IO
-import LiquidityEvent.LiquidityTokenHolder (pmintLiquidityTokenHolder, pliquidityTokenHolder)
 
 encodeSerialiseCBOR :: Script -> Text
 encodeSerialiseCBOR = Text.decodeUtf8 . Base16.encode . CBOR.serialize' . serialiseScript
@@ -78,15 +74,15 @@ writePlutusScript cfg title filepath term = do
 
 writePlutusScriptTraceBind :: String -> FilePath -> ClosedTerm a -> IO ()
 writePlutusScriptTraceBind title filepath term =
-  writePlutusScript (Config DoTracingAndBinds) title filepath term
+  writePlutusScript (Tracing LogInfo DoTracingAndBinds) title filepath term
 
 writePlutusScriptTrace :: String -> FilePath -> ClosedTerm a -> IO ()
 writePlutusScriptTrace title filepath term =
-  writePlutusScript (Config DoTracing) title filepath term
+  writePlutusScript (Tracing LogInfo DoTracing) title filepath term
 
 writePlutusScriptNoTrace :: String -> FilePath -> ClosedTerm a -> IO ()
 writePlutusScriptNoTrace title filepath term =
-  writePlutusScript (Config NoTracing) title filepath term
+  writePlutusScript NoTracing title filepath term
 
 main :: IO ()
 main = do
