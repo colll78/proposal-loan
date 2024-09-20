@@ -97,26 +97,6 @@ pProposalLoanSpending  = plam $ \ctx -> P.do
           ] 
   pif ( mintChecks ) (pconstant ()) perror 
 
--- pletFieldsSpending :: Term s PData -> PScriptInfoHRec s
--- pletFieldsSpending term =
---   let constrPair = pasConstr # term
---       fields = psndBuiltin # constrPair
---       checkedFields = 
---         pif ((pfstBuiltin # constrPair) #== 1)
---           fields
---           perror
---       outRef = punsafeCoerce @_ @_ @(PAsData PTxOutRef) $ phead # checkedFields
---       datum = punsafeCoerce @_ @_ @(PAsData (PMaybeData PDatum)) $ phead # (ptail # checkedFields)
---   in HCons (Labeled @"_0" outRef) (HCons (Labeled @"_1" datum) HNil)
--- pletFieldsSpending :: Term s PData -> PScriptInfoHRec s
--- pletFieldsSpending term =
---   plet (pasConstr # term) $ \constrPair ->
---     plet (psndBuiltin # constrPair) $ \fields ->
---       plet (pif ((pfstBuiltin # constrPair) #== 1) fields perror) $ \checkedFields ->
---         let outRef = punsafeCoerce @_ @_ @(PAsData PTxOutRef) $ phead # checkedFields
---             datum = punsafeCoerce @_ @_ @(PAsData (PMaybeData PDatum)) $ phead # (ptail # checkedFields)
---         in HCons (Labeled @"_0" outRef) (HCons (Labeled @"_1" datum) HNil)
-
 type PScriptInfoHRec (s :: S) =
   HRec
     '[ '("_0", Term s (PAsData PTxOutRef))
@@ -131,32 +111,6 @@ pletFieldsSpending term = runTermCont $ do
   let outRef = punsafeCoerce @_ @_ @(PAsData PTxOutRef) $ phead # checkedFields
       datum = punsafeCoerce @_ @_ @(PAsData (PMaybeData PDatum)) $ phead # (ptail # checkedFields)
   tcont $ \f -> f $ HCons (Labeled @"_0" outRef) (HCons (Labeled @"_1" datum) HNil)
-
--- pletFieldsSpending :: Term s PData -> PScriptInfoHRec s
--- pletFieldsSpending term =
---   plet (pasConstr # term) $ \constrPair -> 
---     pif ((pfstBuiltin # constrPair) #== 1)
---       (
---         plet (psndBuiltin # constrPair) $ \fields -> 
---           let outRef = punsafeCoerce @_ @_ @(PAsData PTxOutRef) $ phead # fields
---               datum = punsafeCoerce @_ @_ @(PAsData (PMaybeData PDatum)) $ phead # (ptail # fields)
---           in HCons (Labeled @"_0" outRef) (HCons (Labeled @"_1" datum) HNil)
---       )
---       perror 
-
--- pletFieldsSpending :: Term s PData -> PScriptInfoHRec s
--- pletFieldsSpending term = P.do 
---   constrPair <- plet $ pasConstr # term
---   fields <- plet $ psndBuiltin # constrPair
-  
---   let outRef = punsafeCoerce @_ @_ @(PAsData PTxOutRef) $ phead # fields
---       datum = punsafeCoerce @_ @_ @(PAsData (PMaybeData PDatum)) $ phead # (ptail # fields)
-  
---   pif ((pfstBuiltin # constrPair) #== 1)
---       (HCons (Labeled @"_0" outRef) (HCons (Labeled @"_1" datum) HNil))
---       perror
-      
-
 
 -- pletFieldsConstr ::
 --   forall fs a s b ps bs.
